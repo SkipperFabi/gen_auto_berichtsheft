@@ -109,15 +109,15 @@ function promptUserForTimeframe() {
     });
 }
 
-// Main function
+// Fetches the teaching contents for each lesson and builds the Word document
 async function fetchTeachingContent(startDate, endDate) {
     try {
-        // Step 1: Login and get the cookie
-        const cookie = await loginAndGetCookie(); // Fetch the cookie
+        // Login and get the cookie
+        const cookie = await loginAndGetCookie();
         if (DEBUG) {
             console.log("Using Cookie:", cookie);
         }
-        // Extract tenant-id from the cookie
+        // Extract tenant-id from the cookie -> API Request requires it
         const tenantIdMatch = cookie.match(/Tenant-Id="([^"]+)"/);
         if (!tenantIdMatch || !tenantIdMatch[1]) {
             throw new Error("Tenant-Id not found in the cookie.");
@@ -126,7 +126,7 @@ async function fetchTeachingContent(startDate, endDate) {
         if (DEBUG) {
             console.log("Extracted Tenant-Id:", tenantId);
         }
-        // Step 2: Get API Token
+        // Get API Token
         const tokenResponse = await fetch("https://erato.webuntis.com/WebUntis/api/token/new", {
             method: "GET",
             headers: {
@@ -141,10 +141,10 @@ async function fetchTeachingContent(startDate, endDate) {
             throw new Error(`Failed to fetch API token: ${tokenResponse.statusText}`);
         }
 
-        // Read the token as plain text
+        // Read the token as plain text (WebUntis API returns a token in plain text)
         const authToken = await tokenResponse.text();
         if (DEBUG) {
-            console.log("API-Token Response:", authToken); // Log the raw token response
+            console.log("API-Token Response:", authToken);
         } else {
             console.log("API-Token was successfully fetched.");
         }
@@ -155,7 +155,7 @@ async function fetchTeachingContent(startDate, endDate) {
 
         const paragraphs = [];
 
-        // Add the main title
+        // Add the main title to the word
         paragraphs.push(
             new Paragraph({
                 text: "Berichtsheft",
@@ -173,7 +173,7 @@ async function fetchTeachingContent(startDate, endDate) {
             })
         );
 
-        // Step 4: Fetch teaching content for each day
+        // Fetch teaching content for each day
         let currentDate = new Date(startDate);
         while (currentDate <= endDate) {
             const formattedDate = formatLocalDateTime(currentDate).split("T")[0]; // Format as YYYY-MM-DD
@@ -191,21 +191,21 @@ async function fetchTeachingContent(startDate, endDate) {
                 lessons.push({
                     elementId: 36686,
                     elementType: 5,
-                    startDateTime: formatLocalDateTime(startDateTime), // Use formatLocalDateTime
-                    endDateTime: formatLocalDateTime(endDateTime),     // Use formatLocalDateTime
+                    startDateTime: formatLocalDateTime(startDateTime),
+                    endDateTime: formatLocalDateTime(endDateTime),
                 });
             }
 
-            // Add a heading for the current date
+            // Add a heading for the current weekday and date
             paragraphs.push(
                 new Paragraph({
                     children: [
                         new TextRun({
                             text: `${currentDate.toLocaleDateString("de-DE", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}:`,
-                            underline: {}, // Add underline to the text
+                            underline: {},
                         }),
                     ],
-                    heading: "Heading2", // Keep the heading level as Heading2
+                    heading: "Heading2",
                 })
             );
 
@@ -246,7 +246,7 @@ async function fetchTeachingContent(startDate, endDate) {
                             console.log("Teaching Content Response:", JSON.stringify(teachingContentData, null, 2));
                         }
 
-                        if (!entry.subject?.longName) continue; // Skip entries without a subject
+                        if (!entry.subject?.longName) continue; // Skip entries without a subject -> Eliminates useless entries in the word
 
                         // Adjust the subject name if it matches the specific longName
                         let subject = entry.subject.longName;
@@ -277,7 +277,7 @@ async function fetchTeachingContent(startDate, endDate) {
                         children: [
                             new TextRun({
                                 text: subject,
-                                color: "156082", // Set a custom color (e.g., dark gray)
+                                color: "156082", // Set a custom color (hexadecimal)
                             }),
                         ],
                         heading: "Heading3",
@@ -297,7 +297,7 @@ async function fetchTeachingContent(startDate, endDate) {
                 }
             }
 
-            // Add an empty line between days
+            // Add an empty line between the weekdays
             paragraphs.push(
                 new Paragraph({
                     text: "",
@@ -308,7 +308,7 @@ async function fetchTeachingContent(startDate, endDate) {
             currentDate.setDate(currentDate.getDate() + 1);
         }
 
-        // Step 5: Generate Word Document
+        // Generate Word Document
         if (paragraphs.length === 0) {
             throw new Error("No valid teaching content to add to the document.");
         }
@@ -374,7 +374,6 @@ function displayStartupScreen() {
     console.log("\n");
 }
 
-// Execute the main function
 async function main() {
     try {
         displayStartupScreen();
