@@ -15,20 +15,6 @@ const UNTIS_USERNAME = process.env.UNTIS_USERNAME;
 const UNTIS_PASSWORD = process.env.UNTIS_PASSWORD;
 const UNTIS_SERVER = process.env.UNTIS_SERVER;
 
-// Helper function to format date
-const formatDate = (date) => {
-    // Convert YYYYMMDD to a valid Date object
-    const year = Math.floor(date / 10000); // Extract the year
-    const month = Math.floor((date % 10000) / 100) - 1; // Extract the month (0-based)
-    const day = date % 100; // Extract the day
-
-    const validDate = new Date(year, month, day);
-
-    // Format the date as a readable string
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    return validDate.toLocaleDateString(undefined, options);
-};
-
 const formatLocalDateTime = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-based
@@ -246,7 +232,7 @@ async function fetchTeachingContent(startDate, endDate) {
                             console.log("Teaching Content Response:", JSON.stringify(teachingContentData, null, 2));
                         }
 
-                        if (!entry.subject?.longName) continue; // Skip entries without a subject -> Eliminates useless entries in the word
+                        if (!entry.subject?.longName) continue; // Skip entries without a subject
 
                         // Adjust the subject name if it matches the specific longName
                         let subject = entry.subject.longName;
@@ -254,9 +240,30 @@ async function fetchTeachingContent(startDate, endDate) {
                             subject = "LF 8: Daten systemübergreifend bereitstellen";
                         }
 
-                        const teachingContent = entry.status === "CANCELLED"
-                            ? "Entfallen"
-                            : entry.teachingContent || "No Teaching Content";
+                        // Check if the lesson is canceled
+                        if (entry.status === "CANCELLED") {
+                            const startTime = new Date(entry.startDateTime).toLocaleTimeString("de-DE", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                            });
+                            const endTime = new Date(entry.endDateTime).toLocaleTimeString("de-DE", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                            });
+                            const canceledText = `Entfallen (${startTime} - ${endTime})`;
+
+                            // Group by subject
+                            if (!daySubjects[subject]) {
+                                daySubjects[subject] = new Set();
+                            }
+                            daySubjects[subject].add(canceledText);
+                            continue;
+                        }
+
+                        // Check if teaching content is provided
+                        const teachingContent =
+                            entry.teachingContent ||
+                            "Kein Lehrstoff durch die Lehrkraft angegeben! Bitte manuell eintragen!";
 
                         // Group by subject
                         if (!daySubjects[subject]) {
@@ -271,7 +278,6 @@ async function fetchTeachingContent(startDate, endDate) {
 
             // Add subjects and their teaching contents to the document
             for (const [subject, contents] of Object.entries(daySubjects)) {
-                // Add the subject as a Heading3 with a custom color
                 paragraphs.push(
                     new Paragraph({
                         children: [
@@ -284,11 +290,17 @@ async function fetchTeachingContent(startDate, endDate) {
                     })
                 );
 
-                // Add the teaching contents as a bulleted list
                 for (const content of contents) {
                     paragraphs.push(
                         new Paragraph({
-                            text: content,
+                            children: [
+                                new TextRun({
+                                    text: content,
+                                    color: content.includes("Kein Lehrstoff")
+                                        ? "FF0000" // Red text for missing teaching content
+                                        : "000000", // Black text for normal content
+                                }),
+                            ],
                             bullet: {
                                 level: 0, // Level 0 for top-level bullet points
                             },
@@ -348,9 +360,9 @@ function getCalendarWeek(date) {
 function displayStartupScreen() {
     console.clear();
     console.log(`
-    ==========================================
-                  Berichtsheft Generator
-    ==========================================
+    ============================================================================
+                                Berichtsheft Generator
+    ============================================================================
     
     Welcome to the Berichtsheft Generator!
     This script fetches teaching contents from WebUntis
@@ -365,7 +377,7 @@ function displayStartupScreen() {
     - Automatically formatted Word document.
     - Debug mode for detailed logs (set DEBUG=true in .env).
 
-    ==========================================
+    ==============================================================================
     `);
 
     // Add a red warning message
