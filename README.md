@@ -31,7 +31,7 @@ Copy or rename the .example.env to .env and fill in your credentials and prefere
 
 - DOCX_PATH (optional): Directory for the output file. If not set, the script directory is used.
 - OUTPUT_FILENAME (optional): Name of the output file. Defaults to TeachingContentOverview.docx.
-- DEBUG (optional): Set to true for verbose logging.
+- DEBUG: Set to true for verbose logging.
 
 ## Usage
 1. Run the script (bash or cmd)
