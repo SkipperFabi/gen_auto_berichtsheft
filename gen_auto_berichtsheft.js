@@ -4,6 +4,7 @@ import { WebUntis } from "webuntis";
 import dotenv from "dotenv";
 import { get } from 'http';
 import readline from "readline";
+import path from "path";
 
 dotenv.config();
 
@@ -339,17 +340,23 @@ async function fetchTeachingContent(startDate, endDate) {
 
         const buffer = await Packer.toBuffer(doc);
 
-        let outputFilename;
-        if (process.env.OUTPUT_FILENAME && process.env.OUTPUT_FILENAME.trim() !== "") {
-            outputFilename = process.env.OUTPUT_FILENAME.trim();
-            if (!outputFilename.toLowerCase().endsWith(".docx")) {
+        let outputFilename = process.env.OUTPUT_FILENAME && process.env.OUTPUT_FILENAME.trim() !== ""
+            ? process.env.OUTPUT_FILENAME.trim()
+            : "TeachingContentOverview.docx";
+        if (!outputFilename.toLowerCase().endsWith(".docx")) {
             outputFilename += ".docx";
-            }
-        } else {
-            outputFilename = "TeachingContentOverview.docx";
         }
-        fs.writeFileSync(outputFilename, buffer);
-        console.log(`Teaching content exported successfully to ${outputFilename}`);
+
+        // Use DOCX_PATH from env, fallback to script dir
+        const outputDir = process.env.DOCX_PATH && process.env.DOCX_PATH.trim() !== ""
+            ? process.env.DOCX_PATH.trim()
+            : __dirname;
+        const outputPath = path.isAbsolute(outputFilename)
+            ? outputFilename
+            : path.join(outputDir, outputFilename);
+
+        fs.writeFileSync(outputPath, buffer);
+        console.log(`Teaching content exported successfully to ${outputPath}`);
     } catch (error) {
         console.error("An error occurred:", error);
     }
@@ -363,23 +370,6 @@ function getCalendarWeek(date) {
     const firstThursday = new Date(target.getFullYear(), 0, 4);
     const weekNumber = Math.ceil(((target - firstThursday) / 86400000 + firstThursday.getDay() + 1) / 7);
     return weekNumber;
-}
-
-function convertToPDF(docxPath) {
-    if (DEBUG) {
-        console.log(`Converting ${docxPath} to PDF...`);
-    }
-    const docxConverter = require("docx-pdf");
-    if (!fs.existsSync(docxPath)) {
-        throw new Error(`The specified DOCX file does not exist: ${docxPath}`);
-    }
-    return new Promise((resolve, reject) => {
-        const pdfPath = docxPath.replace(/\.docx$/i, ".pdf");
-        docxConverter(docxPath, pdfPath, (err, result) => {
-            if (err) return reject(err);
-            resolve(pdfPath);
-        });
-    });
 }
 
 function displayStartupScreen() {

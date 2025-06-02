@@ -2,6 +2,7 @@
   "type": "module",
   "dependencies": {
     "docx": "^9.4.1",
+    "docx-pdf": "^0.0.1",
     "dotenv": "^16.5.0",
     "webuntis": "^2.2.1"
   }
