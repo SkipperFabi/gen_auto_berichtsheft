@@ -47,12 +47,11 @@ node gen_auto_berichtsheft.js
 The file will be saved to the directory specified by DOCX_PATH or, if not set, in the script directory.
 
 ## Notes
-- If a lesson does not have teaching content, the script will insert a red warning in the document:
--- "Kein Lehrstoff durch die Lehrkraft angegeben! Bitte manuell eintragen!"
+- If a lesson does not have teaching content, the script will insert a red warning in the document: "Kein Lehrstoff durch die Lehrkraft angegeben! Bitte manuell eintragen!"
 
 - If a lesson is cancelled, it will be marked as Entfallen (startTime - endTime) in the document.
 
--Make sure your WebUntis credentials are correct and have access to the required data.
+- Make sure your WebUntis credentials are correct and have access to the required data.
 
 ## Troubleshooting
 If you encounter errors related to missing modules, run npm install again.
