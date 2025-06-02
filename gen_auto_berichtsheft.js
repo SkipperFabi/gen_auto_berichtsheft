@@ -327,7 +327,15 @@ async function fetchTeachingContent(startDate, endDate) {
 
         const buffer = await Packer.toBuffer(doc);
 
-        const outputFilename = "TeachingContentOverview.docx";
+        let outputFilename;
+        if (process.env.OUTPUT_FILENAME && process.env.OUTPUT_FILENAME.trim() !== "") {
+            outputFilename = process.env.OUTPUT_FILENAME.trim();
+            if (!outputFilename.toLowerCase().endsWith(".docx")) {
+            outputFilename += ".docx";
+            }
+        } else {
+            outputFilename = "TeachingContentOverview.docx";
+        }
         fs.writeFileSync(outputFilename, buffer);
         console.log(`Teaching content exported successfully to ${outputFilename}`);
     } catch (error) {
@@ -343,6 +351,23 @@ function getCalendarWeek(date) {
     const firstThursday = new Date(target.getFullYear(), 0, 4);
     const weekNumber = Math.ceil(((target - firstThursday) / 86400000 + firstThursday.getDay() + 1) / 7);
     return weekNumber;
+}
+
+function convertToPDF(docxPath) {
+    if (DEBUG) {
+        console.log(`Converting ${docxPath} to PDF...`);
+    }
+    const docxConverter = require("docx-pdf");
+    if (!fs.existsSync(docxPath)) {
+        throw new Error(`The specified DOCX file does not exist: ${docxPath}`);
+    }
+    return new Promise((resolve, reject) => {
+        const pdfPath = docxPath.replace(/\.docx$/i, ".pdf");
+        docxConverter(docxPath, pdfPath, (err, result) => {
+            if (err) return reject(err);
+            resolve(pdfPath);
+        });
+    });
 }
 
 function displayStartupScreen() {
