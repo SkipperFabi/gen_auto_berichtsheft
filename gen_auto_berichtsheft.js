@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import { get } from 'http';
 import readline from "readline";
 import path from "path";
+import cliProgress from 'cli-progress';
 
 dotenv.config();
 
@@ -160,12 +161,25 @@ async function fetchTeachingContent(startDate, endDate) {
             })
         );
 
-        // Fetch teaching content for each day
+        // Calculate total days to process
+        const totalDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        const progressBar = new cliProgress.SingleBar({
+            format: 'Progress: |{bar}| {percentage}% | {value}/{total} days',
+            barCompleteChar: '\u2588',
+            barIncompleteChar: '\u2591',
+            hideCursor: true
+        }, cliProgress.Presets.shades_classic);
+
+        console.log("Fetching and processing lessons for the selected date range...");
+        progressBar.start(totalDays, 0);
+
         let currentDate = new Date(startDate);
+        let dayCount = 0;
         while (currentDate <= endDate) {
             const formattedDate = formatLocalDateTime(currentDate).split("T")[0]; // Format as YYYY-MM-DD
-            console.log(`Fetching lessons for date: ${formattedDate}`);
-
+            if (DEBUG) {
+                console.log(`Fetching lessons for date: ${formattedDate}`);
+            }
             // Fetch all lessons for the current date
             const lessons = []; // Collect all lessons for the day
             for (let hour = 7; hour <= 18; hour++) { // Iterate over hours (7:00 to 18:00)
@@ -319,7 +333,11 @@ async function fetchTeachingContent(startDate, endDate) {
 
             // Move to the next day
             currentDate.setDate(currentDate.getDate() + 1);
+            dayCount++;
+            progressBar.update(dayCount);
         }
+
+        progressBar.stop();
 
         // Generate Word Document
         if (paragraphs.length === 0) {
