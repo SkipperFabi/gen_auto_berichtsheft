@@ -34,7 +34,7 @@ This script fetches teaching contents from WebUntis and generates a formatted Wo
     ```env
     # (Required) Your WebUntis credentials and school info
     UNTIS_USER=your_username
-    UNTIS_PASSWORD=your_password
+    UNTIS_PASSWORD="your_password"
     UNTIS_SCHOOL=your_school
 
     # (Optional) Directory for the output file. If not set, the script directory is used.
