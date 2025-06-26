@@ -23,28 +23,30 @@ This script fetches teaching contents from WebUntis and generates a formatted Wo
    cd gen_auto_berichtsheft
    ```
 
-2. Install dependencies:
-npm install
+2. **Install dependencies:**
+    ```bash
+    npm install
+    ```
 
-3. Create a .env file in the project root:
-Copy or rename the .example.env to .env and fill in your credentials and preferences.
+3. **Create a .env file in the project root:**
+    Copy or rename the .example.env to .env and fill in your credentials and preferences.
 
-- DOCX_PATH (optional): Directory for the output file. If not set, the script directory is used.
-- OUTPUT_FILENAME (optional): Name of the output file. Defaults to TeachingContentOverview.docx.
-- DEBUG: Set to true for verbose logging.
+    - DOCX_PATH (optional): Directory for the output file. If not set, the script directory is used.
+    - OUTPUT_FILENAME (optional): Name of the output file. Defaults to TeachingContentOverview.docx.
+    - DEBUG: Set to true for verbose logging.
 
 ## Usage
-1. Run the script (bash or cmd)
-node gen_auto_berichtsheft.js
+1. **Run the script (bash or cmd)**
+    node gen_auto_berichtsheft.js
 
-2. Follow the prompts:
-```javscript
+2. **Follow the prompts:**
+    ```javscript
     Enter the start date (YYYY-MM-DD)
     Enter the end date (YYYY-MM-DD)
-```
+    ```
 
-3. Find your generated .docx file:
-The file will be saved to the directory specified by DOCX_PATH or, if not set, in the script directory.
+3. **Find your generated .docx file:**
+    The file will be saved to the directory specified by DOCX_PATH or, if not set, in the script directory.
 
 ## Notes
 - If a lesson does not have teaching content, the script will insert a red warning in the document: "Kein Lehrstoff durch die Lehrkraft angegeben! Bitte manuell eintragen!"
