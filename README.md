@@ -29,15 +29,29 @@ This script fetches teaching contents from WebUntis and generates a formatted Wo
     ```
 
 3. **Create a .env file in the project root:**
-    Copy or rename the .example.env to .env and fill in your credentials and preferences.
+    Copy or rename the `.example.env` file to `.env` and fill in your credentials and preferences:
 
-    - DOCX_PATH (optional): Directory for the output file. If not set, the script directory is used.
-    - OUTPUT_FILENAME (optional): Name of the output file. Defaults to TeachingContentOverview.docx.
-    - DEBUG: Set to true for verbose logging.
+    ```env
+    # (Required) Your WebUntis credentials and school info
+    WEBUNTIS_USER=your_username
+    WEBUNTIS_PASSWORD=your_password
+    WEBUNTIS_SCHOOL=your_school
+
+    # (Optional) Directory for the output file. If not set, the script directory is used.
+    DOCX_PATH=./output
+
+    # (Optional) Name of the output file. Defaults to TeachingContentOverview.docx.
+    OUTPUT_FILENAME=TeachingContentOverview.docx
+
+    # (Optional) Set to true for verbose logging.
+    DEBUG=false
+    ```
 
 ## Usage
 1. **Run the script (bash or cmd)**
+    ```bash
     node gen_auto_berichtsheft.js
+    ```
 
 2. **Follow the prompts:**
     ```javscript
