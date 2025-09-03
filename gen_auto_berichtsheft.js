@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { Document, Packer, Paragraph, TextRun } from "docx";
+import { Document, Packer, Paragraph, TextRun, LevelFormat, AlignmentType, convertInchesToTwip } from "docx";
 import { WebUntis } from "webuntis";
 import dotenv from "dotenv";
 import { get } from 'http';
@@ -316,8 +316,9 @@ async function fetchTeachingContent(startDate, endDate) {
                                         : "000000", // Black text for normal content
                                 }),
                             ],
-                            bullet: {
-                                level: 0, // Level 0 for top-level bullet points
+                            numbering: {
+                                reference: "bullet-points",
+                                level: 0,
                             },
                         })
                     );
@@ -345,9 +346,29 @@ async function fetchTeachingContent(startDate, endDate) {
         }
 
         const doc = new Document({
-            creator: "Fabian",
+            creator: "BerichtsheftScript",
             title: "TeachingContentOverview",
             description: "A document containing teaching content fetched from WebUntis.",
+            numbering: {
+                config: [
+                    {
+                        reference: "bullet-points",
+                        levels: [
+                            {
+                                level: 0,
+                                format: LevelFormat.BULLET,
+                                text: "•",
+                                alignment: AlignmentType.LEFT,
+                                style: {
+                                    paragraph: {
+                                        indent: { left: convertInchesToTwip(0.5) },
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            },
             sections: [
                 {
                     properties: {},
