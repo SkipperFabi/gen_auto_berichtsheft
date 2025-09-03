@@ -346,9 +346,8 @@ async function fetchTeachingContent(startDate, endDate) {
             throw new Error("No valid teaching content to add to the document.");
         }
 
-        // And update your Document creation to include proper numbering definition:
         const doc = new Document({
-            creator: "Fabian",
+            creator: "BerichtsheftScript",
             title: "TeachingContentOverview",
             description: "A document containing teaching content fetched from WebUntis.",
             numbering: {
