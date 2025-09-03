@@ -305,7 +305,6 @@ async function fetchTeachingContent(startDate, endDate) {
                     })
                 );
 
-                // Replace the bullet point paragraph creation with this:
                 for (const content of contents) {
                     paragraphs.push(
                         new Paragraph({
