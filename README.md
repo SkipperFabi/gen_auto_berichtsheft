@@ -1,5 +1,5 @@
 # Berichtsheft Generator
-
+WebUntis API doc is generally not public available, i am using following wrapper: https://github.com/SchoolUtils/WebUntis
 This script fetches teaching contents from WebUntis and generates a formatted Word document (`.docx`) for your Berichtsheft.
 
 ## Features
