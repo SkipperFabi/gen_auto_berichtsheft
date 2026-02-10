@@ -7,6 +7,7 @@ import readline from "readline";
 import path from "path";
 import cliProgress from 'cli-progress';
 
+
 dotenv.config();
 
 const DEBUG = process.env.DEBUG === "true" || process.env.DEBUG === "1";
@@ -28,43 +29,20 @@ const formatLocalDateTime = (date) => {
     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 };
 
-async function loginAndGetCookie() {
-    const loginUrl = `https://${UNTIS_SERVER}/WebUntis/jsonrpc.do?school=${UNTIS_SCHOOL}`;
-    const loginPayload = {
-        id: "login",
-        method: "authenticate",
-        params: {
-            user: UNTIS_USERNAME,
-            password: UNTIS_PASSWORD,
-        },
-        jsonrpc: "2.0",
-    };
-
-    const loginResponse = await fetch(loginUrl, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(loginPayload),
-    });
-
-    if (!loginResponse.ok) {
-        throw new Error(`Failed to login: ${loginResponse.status} ${loginResponse.statusText}`);
-    }
-
-    // Extract the Set-Cookie header
-    const setCookieHeader = loginResponse.headers.get("set-cookie");
-    if (!setCookieHeader) {
-        throw new Error("No Set-Cookie header found in the login response.");
-    }
-
-    // Combine all cookies into a single string (if multiple cookies exist)
-    const cookie = setCookieHeader.split(",").map(cookie => cookie.split(";")[0]).join("; ");
+async function loginToWebUntis() {
     if (DEBUG) {
-        console.log("Extracted Cookie:", cookie);
+        console.log("Logging in to WebUntis with API...\n");
     }
-
-    return cookie;
+    
+    const untis = new WebUntis(UNTIS_SCHOOL, UNTIS_USERNAME, UNTIS_PASSWORD, UNTIS_SERVER);
+    
+    await untis.login();
+    
+    if (DEBUG) {
+        console.log("Successfully logged in to WebUntis!");
+    }
+    
+    return untis;
 }
 
 // Function to prompt the user for input
@@ -98,24 +76,28 @@ function promptUserForTimeframe() {
 }
 
 // Fetches the teaching contents for each lesson and builds the Word document
-async function fetchTeachingContent(startDate, endDate) {
+async function fetchTeachingContent(startDate, endDate, untis) {
     try {
-        // Login and get the cookie
-        const cookie = await loginAndGetCookie();
+        // Get the cookie and session info from the logged-in untis object
+        const sessionInformation = untis.sessionInformation;
+        const cookie = `JSESSIONID=${sessionInformation.sessionId}; schoolname="_${encodeURIComponent(UNTIS_SCHOOL)}"`;
+        
         if (DEBUG) {
             console.log("Using Cookie:", cookie);
         }
+        
         // Extract tenant-id from the cookie -> API Request requires it
         const tenantIdMatch = cookie.match(/Tenant-Id="([^"]+)"/);
-        if (!tenantIdMatch || !tenantIdMatch[1]) {
-            throw new Error("Tenant-Id not found in the cookie.");
+        let tenantId = "";
+        if (tenantIdMatch && tenantIdMatch[1]) {
+            tenantId = tenantIdMatch[1];
         }
-        const tenantId = tenantIdMatch[1];
-        if (DEBUG) {
+        if (DEBUG && tenantId) {
             console.log("Extracted Tenant-Id:", tenantId);
         }
+        
         // Get API Token
-        const tokenResponse = await fetch("https://erato.webuntis.com/WebUntis/api/token/new", {
+        const tokenResponse = await fetch(`https://${UNTIS_SERVER}/WebUntis/api/token/new`, {
             method: "GET",
             headers: {
                 Authorization: `Basic ${Buffer.from(`${UNTIS_USERNAME}:${UNTIS_PASSWORD}`).toString("base64")}`,
@@ -215,7 +197,7 @@ async function fetchTeachingContent(startDate, endDate) {
             for (const lesson of lessons) {
                 try {
                     // Construct the URL
-                    const url = `https://erato.webuntis.com/WebUntis/api/rest/view/v2/calendar-entry/detail?elementId=${lesson.elementId}&elementType=${lesson.elementType}&endDateTime=${encodeURIComponent(
+                    const url = `https://${UNTIS_SERVER}/WebUntis/api/rest/view/v2/calendar-entry/detail?elementId=${lesson.elementId}&elementType=${lesson.elementType}&endDateTime=${encodeURIComponent(
                         lesson.endDateTime
                     )}&homeworkOption=DUE&startDateTime=${encodeURIComponent(lesson.startDateTime)}`;
 
@@ -231,7 +213,7 @@ async function fetchTeachingContent(startDate, endDate) {
                             "Content-Type": "application/json",
                             Accept: "application/json",
                             Cookie: cookie,
-                            "Tenant-Id": tenantId,
+                            ...(tenantId && { "Tenant-Id": tenantId }),
                         },
                     });
 
@@ -442,16 +424,31 @@ function displayStartupScreen() {
 }
 
 async function main() {
+    let untis = null;
     try {
         displayStartupScreen();
+        
+        // Login to WebUntis once
+        untis = await loginToWebUntis();
+        
         // Prompt the user for the timeframe
         const { startDate, endDate } = await promptUserForTimeframe();
         console.log(`Fetching data from ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}...`);
 
-        // Pass the dates to the fetching function
-        await fetchTeachingContent(startDate, endDate);
+        // Pass the dates and untis instance to the fetching function
+        await fetchTeachingContent(startDate, endDate, untis);
+        
+        // Logout after we're done
+        await untis.logout();
     } catch (error) {
         console.error("Error:", error.message);
+        if (untis) {
+            try {
+                await untis.logout();
+            } catch (logoutError) {
+                // Ignore logout errors
+            }
+        }
     }
 }
 
